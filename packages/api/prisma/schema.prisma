@@ -1,0 +1,65 @@
+// Prisma schema for DSA Arcade.
+// Phase 1 models only: users, regions, patterns.
+// Later phases add: games, stages, challenges, test_cases, hints,
+// game_progress, submissions, mastery, achievements.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  xp           Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Region {
+  id          String    @id @default(uuid()) @db.Uuid
+  slug        String    @unique
+  name        String
+  description String
+  orderIndex  Int       @map("order_index")
+  theme       Json?
+  patterns    Pattern[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([orderIndex])
+  @@map("regions")
+}
+
+model Pattern {
+  id          String     @id @default(uuid()) @db.Uuid
+  regionId    String     @map("region_id") @db.Uuid
+  region      Region     @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  slug        String     @unique
+  name        String
+  description String
+  analogy     String?
+  pseudocode  String?
+  complexity  String?
+  difficulty  Difficulty @default(EASY)
+  orderIndex  Int        @map("order_index")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@index([regionId])
+  @@map("patterns")
+}

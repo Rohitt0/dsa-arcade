@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-night-900 text-parchment font-body antialiased;
+    /* Subtle starfield / night-sky gradient for the overworld feel. */
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.25), transparent),
+      radial-gradient(1px 1px at 70% 60%, rgba(255, 255, 255, 0.18), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.2), transparent),
+      linear-gradient(180deg, #0b0c1e 0%, #141633 100%);
+    background-attachment: fixed;
+  }
+
+  /* Comfortable focus ring for keyboard + a11y (never hover-only). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-gold ring-offset-2 ring-offset-night-900;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-pixel leading-relaxed;
+  }
+}
+
+@layer components {
+  /* Chunky 8-bit frame used across cards, panels and dialogs. */
+  .pixel-frame {
+    @apply border-2 border-ink bg-night-800 shadow-pixel;
+  }
+
+  .pixelated {
+    image-rendering: pixelated;
+  }
+}
+
+/* Thin retro scrollbar. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #474d73;
+  border: 2px solid #141633;
+}
+::-webkit-scrollbar-track {
+  background: #141633;
+}
