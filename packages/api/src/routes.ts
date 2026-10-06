@@ -4,6 +4,7 @@ import { authRouter } from './modules/auth/auth.routes';
 import { userRouter } from './modules/user/user.routes';
 import { regionRouter } from './modules/region/region.routes';
 import { patternRouter } from './modules/pattern/pattern.routes';
+import { challengeRouter } from './modules/challenge/challenge.routes';
 
 export const apiRouter = Router();
 
@@ -15,3 +16,4 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/', userRouter); // GET /api/me
 apiRouter.use('/regions', regionRouter);
 apiRouter.use('/patterns', patternRouter);
+apiRouter.use('/challenges', challengeRouter);

@@ -14,12 +14,22 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  RUNNER_URL: z.string().url().default('http://127.0.0.1:4010'),
+  RUNNER_TOKEN: z.string().min(32).default('dev_runner_token_change_before_deploy_123456'),
 });
 
 const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {
   // eslint-disable-next-line no-console
   console.error('❌ Invalid environment variables:\n', parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+if (
+  parsed.data.NODE_ENV === 'production' &&
+  parsed.data.RUNNER_TOKEN === 'dev_runner_token_change_before_deploy_123456'
+) {
+  // eslint-disable-next-line no-console
+  console.error('RUNNER_TOKEN must be replaced before starting in production.');
   process.exit(1);
 }
 

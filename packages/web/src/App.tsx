@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { WorldMapPage } from './pages/WorldMapPage';
 import { RegionPage } from './pages/RegionPage';
 import { PatternPage } from './pages/PatternPage';
+import { ChallengePage } from './pages/ChallengePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -39,6 +40,7 @@ export function App() {
             <Route path="/world" element={<WorldMapPage />} />
             <Route path="/region/:slug" element={<RegionPage />} />
             <Route path="/pattern/:slug" element={<PatternPage />} />
+            <Route path="/challenge/:slug" element={<ChallengePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>

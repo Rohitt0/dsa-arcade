@@ -8,14 +8,71 @@ services:
       POSTGRES_PASSWORD: dsa_dev_password
       POSTGRES_DB: dsa_arcade
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - dsa_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dsa -d dsa_arcade"]
+      test: ['CMD-SHELL', 'pg_isready -U dsa -d dsa_arcade']
       interval: 5s
       timeout: 5s
       retries: 12
+
+  runner:
+    build:
+      context: ./packages/runner
+    container_name: dsa_arcade_runner
+    restart: unless-stopped
+    environment:
+      RUNNER_PORT: 4010
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-dev_runner_token_change_before_deploy_123456}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,exec,nosuid,nodev,size=64m,mode=1777
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    networks:
+      - isolated
+
+  runner-gateway:
+    build:
+      context: ./packages/runner
+      dockerfile: gateway.Dockerfile
+    container_name: dsa_arcade_runner_gateway
+    restart: unless-stopped
+    environment:
+      GATEWAY_PORT: 4010
+      RUNNER_URL: http://runner:4010
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-dev_runner_token_change_before_deploy_123456}
+    ports:
+      - '127.0.0.1:4010:4010'
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 32
+    mem_limit: 64m
+    cpus: 0.25
+    networks:
+      - ingress
+      - isolated
+
+networks:
+  isolated:
+    internal: true
+  ingress:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
 
 volumes:
   dsa_pgdata:

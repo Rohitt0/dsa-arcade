@@ -1,101 +1,97 @@
 # DSA Arcade
 
-**Learn DSA by Playing It.** A pixel-art adventure where each data-structure & algorithm pattern
-is taught through an interactive game before you code it in C++.
+**Learn DSA by Playing It.** A pixel-art adventure where each algorithm pattern is taught through
+an interactive game before students solve it in C++.
 
-> **Phase 1 (this slice):** accounts + a responsive pixel **World Map** you can explore down to the
-> pattern "learn" screen. The games, the C++ editor, hints, challenges, and progress tracking arrive
-> in later phases. The architecture is already laid out to drop them in.
+## Current slice
 
----
+- Responsive account, world map, region, and pattern pages
+- Six-stage Phaser Sliding Window game: find, move, track, variable window, hidden pattern, and boss
+- First C++ challenge: **Longest Substring Without Repeating Characters**
+- Monaco C++20 editor and a separate Docker-based execution service
 
-## Tech stack
+Hints, saved game progress, mastery updates, and coding bosses are later milestones.
 
-- **Monorepo** — npm workspaces: `@dsa/shared`, `@dsa/api`, `@dsa/web`
-- **API** — Express 4 + TypeScript (tsx), Prisma ORM, PostgreSQL 16, JWT access token + httpOnly
-  refresh cookie, Zod validation, Pino logging
-- **Web** — React 18 + Vite 5, React Router 6, TanStack Query v5, Zustand v5, Tailwind + custom
-  pixel UI (mobile-first, responsive from 320px up)
-- **Shared** — domain types + Zod schemas used by both sides
+## Stack
+
+- **Monorepo:** npm workspaces for `@dsa/shared`, `@dsa/api`, `@dsa/web`, and `@dsa/runner`
+- **API:** Express 4, TypeScript, Prisma, PostgreSQL 16, JWT, Zod
+- **Web:** React 18, TypeScript, Vite 5, React Router, TanStack Query, Monaco, Phaser 4, Tailwind
+- **Execution:** A separate C++ runner container with per-process isolation and resource limits
 
 ## Prerequisites
 
-- **Node.js 20+** and npm
-- **Docker Desktop** (for PostgreSQL) — must be **running** before the DB steps below
+- Node.js 20+ and npm
+- Docker Desktop running for PostgreSQL and the C++ runner
 
 ## Setup
 
-From the repo root:
+From the repository root:
 
 ```bash
 npm install
-```
-
-Start the database (Docker Desktop must be open):
-
-```bash
 npm run db:up
-```
-
-Generate the Prisma client, run migrations, and seed the world (8 regions, 5 patterns):
-
-```bash
 npm run db:generate
 npm run db:migrate
 npm run db:seed
+npm run runner:up
 ```
 
-> Shortcut: `npm run setup` runs install → db:up → generate → migrate → seed in one go.
-
-## Run
+Then start the web app and API:
 
 ```bash
 npm run dev
 ```
 
 - Web: http://localhost:5173
-- API: http://localhost:4000 (health check at `/api/health`)
+- API: http://localhost:4000 (`/api/health`)
+- Local runner: `127.0.0.1:4010`
 
-The web dev server proxies `/api` to the API, so everything is same-origin (no CORS, refresh cookie
-stays first-party).
+`npm run runner:up` builds and starts the C++ execution service and its restricted gateway. The API
+sends code to the gateway; it never compiles or executes student code inside Express. Neither
+service mounts the Docker socket. The compiler runner is on a private, internal network with a
+read-only root filesystem, dropped capabilities, and container-level CPU, memory, and process
+limits. The gateway is the only service with a host port; it accepts only authenticated health and
+execution requests and forwards them to the private runner. Each compile/run uses an unprivileged
+UID, a private temporary working directory, a minimal environment, process resource limits, output
+caps, and a timeout. The service is limited to one active submission. This is a practical local MVP
+sandbox; production should use a stronger per-submission isolation boundary such as a dedicated
+execution VM or hardened sandbox runtime.
+
+The development runner token in `docker-compose.yml` and `packages/api/src/config/env.ts` is not
+for deployment. Set a strong `RUNNER_TOKEN` in both the API environment and Compose environment
+before deploying. Production should keep the runner on a private network.
 
 ## Try it
 
-1. Open http://localhost:5173 → **Start playing** → create an account.
-2. You land on the **World Map**. The first region is **Open**; the rest are **Locked** (progression
-   lands in a later phase).
-3. Open the first region → pick a pattern → read its idea, analogy, complexity, and pseudocode.
-4. Resize the window (or use device emulation) to 375 / 768 / 1280 — the nav switches between a
-   bottom bar (mobile) and a sidebar (tablet/desktop).
+1. Open the app, create an account, and enter the world.
+2. Open **Sliding Window** and play the Train Window lesson.
+3. Open the C++ challenge below the game. Run the visible and hidden tests from the editor.
+4. Check the layout at phone, tablet, and desktop widths; game controls and editor actions are
+   available without hover.
 
-## Useful scripts (root)
+## Useful scripts
 
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | Run API + web together |
-| `npm run dev:api` / `npm run dev:web` | Run one side |
-| `npm run db:up` | Start Postgres in Docker |
-| `npm run db:migrate` | Apply Prisma migrations |
-| `npm run db:seed` | Seed regions + patterns |
-| `npm run db:reset` *(in `@dsa/api`)* | Drop + recreate + reseed the DB |
+| Script                | What it does                                           |
+| --------------------- | ------------------------------------------------------ |
+| `npm run dev`         | Run API and web client                                 |
+| `npm run typecheck`   | Typecheck shared, API, and web workspaces              |
+| `npm run build`       | Build shared and web workspaces                        |
+| `npm run db:up`       | Start PostgreSQL                                       |
+| `npm run db:generate` | Generate Prisma client                                 |
+| `npm run db:migrate`  | Apply migrations                                       |
+| `npm run db:seed`     | Seed regions, patterns, and the first coding challenge |
+| `npm run runner:up`   | Build and start isolated C++ execution                 |
 
-## Project structure
+## Structure
 
-```
+```text
 packages/
-  shared/   # @dsa/shared — types + zod schemas (imported from source, no build step)
-  api/      # @dsa/api    — Express + Prisma; routes -> controllers -> services
-  web/      # @dsa/web    — React + Vite pixel client
+  shared/   domain types and validation schemas
+  api/      Express routes, services, Prisma schema/migrations and seed data
+  web/      React pages, pixel UI, Monaco editor and Phaser game engine
+  runner/   isolated C++ execution gateway and sandbox image
 ```
 
-## Configuration
-
-API env lives in `packages/api/.env` (copied from `.env.example`). The defaults match
-`docker-compose.yml` and work out of the box for local dev. **Change the JWT secrets before
-deploying anywhere real.**
-
-## What's next
-
-Binary Search / Two Pointers / Stack / BFS stages, the Phaser game bridge, the Monaco C++ editor, a
-**sandboxed** C++ runner service, the progressive hint system, pattern-recognition bosses, and
-rule-based mastery + progress tracking.
+The API environment file is `packages/api/.env`; start from `.env.example`. The Prisma schema has
+a new challenge/submission migration. Apply migrations and reseed after updating the repository.

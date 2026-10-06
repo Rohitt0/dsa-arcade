@@ -3,6 +3,7 @@ dist/
 build/
 .vite/
 coverage/
+/packages/web/public/monaco/
 
 # env (secrets) — keep .env.example tracked
 .env

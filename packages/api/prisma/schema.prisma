@@ -1,7 +1,6 @@
 // Prisma schema for DSA Arcade.
-// Phase 1 models only: users, regions, patterns.
-// Later phases add: games, stages, challenges, test_cases, hints,
-// game_progress, submissions, mastery, achievements.
+// Current models: users, regions, patterns, coding challenges, test cases, submissions.
+// Game-stage persistence, hints, mastery, and achievements will be added in later milestones.
 
 generator client {
   provider = "prisma-client-js"
@@ -18,14 +17,24 @@ enum Difficulty {
   HARD
 }
 
+enum SubmissionStatus {
+  ACCEPTED
+  WRONG_ANSWER
+  COMPILE_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT
+  RUNNER_ERROR
+}
+
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  username     String   @unique
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  xp           Int      @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           String       @id @default(uuid()) @db.Uuid
+  username     String       @unique
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  xp           Int          @default(0)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  submissions  Submission[]
 
   @@map("users")
 }
@@ -46,20 +55,73 @@ model Region {
 }
 
 model Pattern {
-  id          String     @id @default(uuid()) @db.Uuid
-  regionId    String     @map("region_id") @db.Uuid
-  region      Region     @relation(fields: [regionId], references: [id], onDelete: Cascade)
-  slug        String     @unique
+  id          String      @id @default(uuid()) @db.Uuid
+  regionId    String      @map("region_id") @db.Uuid
+  region      Region      @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  slug        String      @unique
   name        String
   description String
   analogy     String?
   pseudocode  String?
   complexity  String?
-  difficulty  Difficulty @default(EASY)
-  orderIndex  Int        @map("order_index")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  difficulty  Difficulty  @default(EASY)
+  orderIndex  Int         @map("order_index")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  challenges  Challenge[]
 
   @@index([regionId])
   @@map("patterns")
+}
+
+model Challenge {
+  id           String       @id @default(uuid()) @db.Uuid
+  patternId    String       @map("pattern_id") @db.Uuid
+  pattern      Pattern      @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  slug         String       @unique
+  title        String
+  description  String
+  inputFormat  String       @map("input_format")
+  outputFormat String       @map("output_format")
+  constraints  String
+  difficulty   Difficulty   @default(EASY)
+  starterCode  String       @map("starter_code") @db.Text
+  orderIndex   Int          @map("order_index")
+  testCases    TestCase[]
+  submissions  Submission[]
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@index([patternId, orderIndex])
+  @@map("challenges")
+}
+
+model TestCase {
+  id          String    @id @default(uuid()) @db.Uuid
+  challengeId String    @map("challenge_id") @db.Uuid
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  testKey     String    @map("test_key")
+  input       String
+  expected    String
+  hidden      Boolean   @default(false)
+  orderIndex  Int       @map("order_index")
+
+  @@unique([challengeId, testKey])
+  @@index([challengeId, orderIndex])
+  @@map("test_cases")
+}
+
+model Submission {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String           @map("challenge_id") @db.Uuid
+  challenge   Challenge        @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  code        String           @db.Text
+  status      SubmissionStatus
+  result      Json
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@index([userId, challengeId, createdAt])
+  @@map("submissions")
 }

@@ -43,6 +43,46 @@ export interface Region {
   patterns: Pattern[];
 }
 
+export interface ChallengeTestCase {
+  caseNumber: number;
+  input: string;
+  expected: string;
+}
+
+export interface Challenge {
+  id: string;
+  patternId: string;
+  slug: string;
+  title: string;
+  description: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraints: string;
+  difficulty: Difficulty;
+  starterCode: string;
+  sampleTests: ChallengeTestCase[];
+}
+
+export type SubmissionStatus =
+  'ACCEPTED' | 'WRONG_ANSWER' | 'COMPILE_ERROR' | 'RUNTIME_ERROR' | 'TIME_LIMIT' | 'RUNNER_ERROR';
+
+export interface SubmissionTestResult {
+  caseNumber: number;
+  hidden: boolean;
+  passed: boolean;
+  expected: string | null;
+  actual: string | null;
+}
+
+export interface SubmissionResult {
+  submissionId: string;
+  status: SubmissionStatus;
+  passed: number;
+  total: number;
+  message?: string;
+  tests: SubmissionTestResult[];
+}
+
 /** Standard success envelopes. */
 export interface AuthResponse {
   user: User;

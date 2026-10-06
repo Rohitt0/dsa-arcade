@@ -1,18 +1,24 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
-import { CenteredLayout } from '../layouts/AppShell';
 import { PixelButton } from '../components/ui';
 
 export function TitlePage() {
   const { isAuthed } = useAuth();
 
   return (
-    <CenteredLayout>
-      <div className="w-full max-w-xl text-center">
+    <main className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-night-900 px-4 py-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-[-8px] z-0 bg-[url('/images/sunset-above-cloud-sea.png')] bg-cover bg-center blur-[3px]"
+      />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-night-900/40" />
+      <div className="relative z-10 w-full max-w-xl text-center">
         <p className="mb-4 font-pixel text-[10px] uppercase tracking-widest text-sky">
           A pixel quest through
         </p>
-        <h1 className="text-2xl leading-relaxed text-gold sm:text-4xl">DSA Arcade</h1>
+        <h1 className="text-2xl leading-relaxed text-gold drop-shadow-[3px_3px_0_#15162b] sm:text-4xl">
+          DSA Arcade
+        </h1>
         <p className="mt-5 text-base text-parchment sm:text-lg">Learn DSA by Playing It.</p>
         <p className="mx-auto mt-3 max-w-md text-sm text-stone-300">
           Explore worlds, uncover the intuition behind each algorithm by playing it, then prove your
@@ -42,6 +48,6 @@ export function TitlePage() {
           )}
         </div>
       </div>
-    </CenteredLayout>
+    </main>
   );
 }

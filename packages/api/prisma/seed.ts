@@ -12,13 +12,15 @@ const regions = [
   {
     slug: 'beginning-valley',
     name: 'The Beginning Valley',
-    description: 'A gentle green valley where every adventurer learns to walk before they run. Arrays, hashing and the sliding window.',
+    description:
+      'A gentle green valley where every adventurer learns to walk before they run. Arrays, hashing and the sliding window.',
     theme: { biome: 'valley', accent: '#5fc26a' },
   },
   {
     slug: 'twin-peaks',
     name: 'The Twin Peaks',
-    description: 'Two mountains that must be climbed from both sides. Two pointers and binary search.',
+    description:
+      'Two mountains that must be climbed from both sides. Two pointers and binary search.',
     theme: { biome: 'mountains', accent: '#6cb8e4' },
   },
   {
@@ -42,7 +44,8 @@ const regions = [
   {
     slug: 'machine-city',
     name: 'The Machine City',
-    description: 'A city of gears and priority queues that never sleeps. Heaps and priority queues.',
+    description:
+      'A city of gears and priority queues that never sleeps. Heaps and priority queues.',
     theme: { biome: 'city', accent: '#f2a65a' },
   },
   {
@@ -127,13 +130,47 @@ const patterns = [
   },
 ];
 
+const slidingWindowChallenge = {
+  slug: 'longest-substring-without-repeating-characters',
+  title: 'Longest Substring Without Repeating Characters',
+  description:
+    'Given a string, return the length of its longest contiguous part that contains no repeated character. A substring must use neighboring characters in their original order.',
+  inputFormat: 'One line containing the input string. The line may be empty.',
+  outputFormat: 'Print one integer: the length of the longest valid substring.',
+  constraints: '0 ≤ string length ≤ 100,000. The input uses visible ASCII characters.',
+  starterCode: `#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    string s;
+    getline(cin, s);
+
+    // TODO: track a substring with no repeated characters.
+    cout << 0 << "\\n";
+    return 0;
+}`,
+  testCases: [
+    { testKey: 'example-1', input: 'abcabcbb', expected: '3', hidden: false },
+    { testKey: 'example-2', input: 'bbbbb', expected: '1', hidden: false },
+    { testKey: 'hidden-1', input: 'pwwkew', expected: '3', hidden: true },
+    { testKey: 'hidden-2', input: 'dvdf', expected: '3', hidden: true },
+    { testKey: 'edge-empty', input: '', expected: '0', hidden: true },
+  ],
+};
+
 async function main() {
   console.log('Seeding regions...');
   for (const [i, r] of regions.entries()) {
     await prisma.region.upsert({
       where: { slug: r.slug },
       update: { name: r.name, description: r.description, orderIndex: i, theme: r.theme },
-      create: { slug: r.slug, name: r.name, description: r.description, orderIndex: i, theme: r.theme },
+      create: {
+        slug: r.slug,
+        name: r.name,
+        description: r.description,
+        orderIndex: i,
+        theme: r.theme,
+      },
     });
   }
 
@@ -171,7 +208,45 @@ async function main() {
     });
   }
 
-  console.log(`Seed complete: ${regions.length} regions, ${patterns.length} patterns.`);
+  const slidingWindowPattern = await prisma.pattern.findUniqueOrThrow({
+    where: { slug: 'sliding-window' },
+    select: { id: true },
+  });
+  const challenge = await prisma.challenge.upsert({
+    where: { slug: slidingWindowChallenge.slug },
+    update: {
+      patternId: slidingWindowPattern.id,
+      title: slidingWindowChallenge.title,
+      description: slidingWindowChallenge.description,
+      inputFormat: slidingWindowChallenge.inputFormat,
+      outputFormat: slidingWindowChallenge.outputFormat,
+      constraints: slidingWindowChallenge.constraints,
+      starterCode: slidingWindowChallenge.starterCode,
+      orderIndex: 0,
+    },
+    create: {
+      patternId: slidingWindowPattern.id,
+      slug: slidingWindowChallenge.slug,
+      title: slidingWindowChallenge.title,
+      description: slidingWindowChallenge.description,
+      inputFormat: slidingWindowChallenge.inputFormat,
+      outputFormat: slidingWindowChallenge.outputFormat,
+      constraints: slidingWindowChallenge.constraints,
+      starterCode: slidingWindowChallenge.starterCode,
+      orderIndex: 0,
+    },
+  });
+  for (const [orderIndex, test] of slidingWindowChallenge.testCases.entries()) {
+    await prisma.testCase.upsert({
+      where: { challengeId_testKey: { challengeId: challenge.id, testKey: test.testKey } },
+      update: { input: test.input, expected: test.expected, hidden: test.hidden, orderIndex },
+      create: { challengeId: challenge.id, ...test, orderIndex },
+    });
+  }
+
+  console.log(
+    `Seed complete: ${regions.length} regions, ${patterns.length} patterns, 1 challenge.`,
+  );
 }
 
 main()
