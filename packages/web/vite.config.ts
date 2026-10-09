@@ -22,6 +22,11 @@ const monacoAssets = {
 // to one origin — no CORS and the httpOnly refresh cookie stays first-party.
 export default defineConfig({
   plugins: [react(), monacoAssets],
+  resolve: {
+    // Avoid Vite's realpath call on workspace HTML entries on Windows. In this
+    // checkout it can fail with EPERM even though the file is readable.
+    preserveSymlinks: true,
+  },
   server: {
     port: 5173,
     watch: {

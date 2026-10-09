@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { GameBridge } from './GameBridge';
 import type { ProgressManager } from './ProgressManager';
+import type { TutorialState } from './content/greenhouse-tutorial';
 
 export type ProgressValue =
   string | number | boolean | null | ProgressValue[] | { [key: string]: ProgressValue };
@@ -37,6 +38,7 @@ export interface CheckpointPayload {
 }
 
 export interface GameEventMap {
+  'game:tutorial': TutorialState;
   'game:ready': { gameId: string };
   'game:error': { message: string };
   'game:completed': { gameId: string };

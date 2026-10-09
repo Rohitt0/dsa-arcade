@@ -70,7 +70,7 @@ const patterns = [
     description:
       'Instead of recomputing a group of consecutive elements from scratch every time, slide a "window" across the data: remove the element that leaves and add the element that enters.',
     analogy:
-      'An old mountain train can only look at three carriages at a time. As it rolls forward, one carriage leaves the window at the back and one new carriage enters at the front — you never re-count the whole train.',
+      'The greenhouse scans k neighboring crystals at once. As its window slides forward, subtract the crystal that leaves and add the one that enters instead of measuring every crystal again.',
     pseudocode:
       'windowSum = sum(first k elements)\nbest = windowSum\nfor i from k to n-1:\n    windowSum += arr[i]        // element entering\n    windowSum -= arr[i - k]    // element leaving\n    best = max(best, windowSum)',
     complexity: 'Time O(n), Space O(1)',
@@ -155,6 +155,33 @@ int main() {
     { testKey: 'hidden-1', input: 'pwwkew', expected: '3', hidden: true },
     { testKey: 'hidden-2', input: 'dvdf', expected: '3', hidden: true },
     { testKey: 'edge-empty', input: '', expected: '0', hidden: true },
+  ],
+};
+
+const greenhouseChallenge = {
+  slug: 'maximum-sum-k-consecutive-crystals',
+  title: 'Maximum Sum of K Consecutive Crystals',
+  description:
+    'Given an integer array crystals and an integer k, return the maximum sum among all contiguous windows of exactly k crystals. Implement Solution::maxCrystalEnergy. Run checks the visible examples; Submit also checks hidden cases.',
+  inputFormat: 'First line: n and k. Second line: n integer crystal values.',
+  outputFormat: 'Print the maximum sum of exactly k consecutive values.',
+  constraints: '1 ≤ k ≤ n ≤ 100,000. Crystal values fit in a signed 32-bit integer.',
+  starterCode: `#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    long long maxCrystalEnergy(vector<int>& crystals, int k) {
+        // TODO: maintain one fixed-size window as it slides.
+        return 0;
+    }
+};`,
+  testCases: [
+    { testKey: 'example-classic', input: '6 3\n2 1 5 1 3 2', expected: '9', hidden: false },
+    { testKey: 'example-increasing', input: '5 2\n1 2 3 4 5', expected: '9', hidden: false },
+    { testKey: 'mission-crystals', input: '8 3\n4 2 7 1 6 3 8 5', expected: '17', hidden: true },
+    { testKey: 'hidden-full-window', input: '4 4\n3 6 2 9', expected: '20', hidden: true },
+    { testKey: 'hidden-negative', input: '5 2\n-8 -3 -6 -2 -5', expected: '-7', hidden: true },
   ],
 };
 
@@ -244,8 +271,40 @@ async function main() {
     });
   }
 
+  const greenhouse = await prisma.challenge.upsert({
+    where: { slug: greenhouseChallenge.slug },
+    update: {
+      patternId: slidingWindowPattern.id,
+      title: greenhouseChallenge.title,
+      description: greenhouseChallenge.description,
+      inputFormat: greenhouseChallenge.inputFormat,
+      outputFormat: greenhouseChallenge.outputFormat,
+      constraints: greenhouseChallenge.constraints,
+      starterCode: greenhouseChallenge.starterCode,
+      orderIndex: 1,
+    },
+    create: {
+      patternId: slidingWindowPattern.id,
+      slug: greenhouseChallenge.slug,
+      title: greenhouseChallenge.title,
+      description: greenhouseChallenge.description,
+      inputFormat: greenhouseChallenge.inputFormat,
+      outputFormat: greenhouseChallenge.outputFormat,
+      constraints: greenhouseChallenge.constraints,
+      starterCode: greenhouseChallenge.starterCode,
+      orderIndex: 1,
+    },
+  });
+  for (const [orderIndex, test] of greenhouseChallenge.testCases.entries()) {
+    await prisma.testCase.upsert({
+      where: { challengeId_testKey: { challengeId: greenhouse.id, testKey: test.testKey } },
+      update: { input: test.input, expected: test.expected, hidden: test.hidden, orderIndex },
+      create: { challengeId: greenhouse.id, ...test, orderIndex },
+    });
+  }
+
   console.log(
-    `Seed complete: ${regions.length} regions, ${patterns.length} patterns, 1 challenge.`,
+    `Seed complete: ${regions.length} regions, ${patterns.length} patterns, 2 challenges.`,
   );
 }
 

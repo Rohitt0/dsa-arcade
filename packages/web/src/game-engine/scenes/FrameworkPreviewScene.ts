@@ -6,7 +6,7 @@ interface SceneData {
   stage?: StageDefinition;
 }
 
-/** Small framework smoke scene; the actual Train Window mechanics come in Phase 3. */
+/** Small framework smoke scene retained for engine diagnostics. */
 export class FrameworkPreviewScene extends Phaser.Scene {
   private stage: StageDefinition;
   private taps = 0;

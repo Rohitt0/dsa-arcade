@@ -19,10 +19,11 @@ export class GameManager {
     definition: GameDefinition,
     sceneFactories: GameSceneRegistry,
     bridge: GameBridge = new GameBridge(),
+    progressScope = 'guest',
   ) {
     this.bridge = bridge;
     this.levels = new LevelManager(definition);
-    this.progress = new ProgressManager(definition.id, this.bridge);
+    this.progress = new ProgressManager(definition.id, this.bridge, progressScope);
 
     const firstStage = this.levels.currentStage;
     if (!firstStage) throw new Error('The game has no playable stages.');

@@ -4,11 +4,6 @@ import { usePattern, useRegions } from '../features/world/useRegions';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback';
 import { PixelBadge, PixelButton, PixelPanel } from '../components/ui';
 import type { Difficulty } from '@dsa/shared';
-import { PhaserHost } from '../game-engine/PhaserHost';
-import { trainWindowGame } from '../game-engine/content/train-window';
-
-const loadTrainWindowScenes = () =>
-  import('../game-engine/content/train-window-scenes').then((module) => module.trainWindowScenes);
 
 const diffTone: Record<Difficulty, 'easy' | 'medium' | 'hard'> = {
   EASY: 'easy',
@@ -82,53 +77,29 @@ export function PatternPage() {
 
         {pattern.slug === 'sliding-window' && (
           <>
-            <PixelPanel title="The Train Window" accent="#5fc26a">
-              <div className="mb-4 space-y-2 text-sm leading-relaxed text-stone-300">
-                <p>
-                  The conductor can inspect a few neighboring train cars at once. Help them scan the
-                  train, keep track of the values, and solve a mystery crossing.
-                </p>
-                <p className="text-parchment">
-                  Use the large controls below the game, or tap the play area. Every stage explains
-                  what changed as you play.
-                </p>
+            <PixelPanel title="Restart the Greenhouse" accent="#5fc26a">
+              <div className="overflow-hidden border-2 border-ink">
+                <img
+                  src="/images/greenhouse/greenhouse-background-clean.png"
+                  alt="Dark pixel-art greenhouse waiting for its crystal power source to be restored"
+                  className="pixelated aspect-[16/9] w-full object-cover"
+                />
               </div>
-              <PhaserHost
-                game={trainWindowGame}
-                loadScenes={loadTrainWindowScenes}
-                renderControls={(controls, sendAction) => (
-                  <div
-                    className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-3"
-                    aria-label="Game controls"
-                  >
-                    {controls.map((control) => (
-                      <PixelButton
-                        key={control.id}
-                        type="button"
-                        size="sm"
-                        variant={
-                          control.id === 'finish' || control.id === 'confirm'
-                            ? 'primary'
-                            : 'secondary'
-                        }
-                        className="w-full whitespace-normal text-center leading-relaxed"
-                        onClick={() => sendAction(control.id)}
-                      >
-                        {control.label}
-                      </PixelButton>
-                    ))}
-                  </div>
-                )}
-              />
+              <p className="mt-4 text-sm leading-relaxed text-stone-300">
+                Restore the greenhouse by finding the highest energy in three neighboring crystals.
+                Write and test a standard C++ solution; passing hidden cases brings the garden back
+                to life.
+              </p>
+              <Link to="/game/greenhouse" className="mt-4 block">
+                <PixelButton className="w-full">Restart the Greenhouse · Play now</PixelButton>
+              </Link>
             </PixelPanel>
             <PixelPanel title="Ready to code?" accent="#f2a65a">
               <p className="mb-3 text-sm leading-relaxed text-stone-300">
-                Try a real Sliding Window problem in C++. The editor includes sample tests and gives
-                feedback when a test fails.
+                Run checks the visible examples; Submit also checks hidden cases. Correct
+                submissions restore the greenhouse scene.
               </p>
-              <Link to="/challenge/longest-substring-without-repeating-characters">
-                <PixelButton className="w-full sm:w-auto">Open C++ challenge</PixelButton>
-              </Link>
+              <Link to="/game/greenhouse"><PixelButton className="w-full sm:w-auto">Open the greenhouse mission</PixelButton></Link>
             </PixelPanel>
           </>
         )}

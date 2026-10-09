@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { cn } from '../lib/cn';
 
@@ -63,13 +64,26 @@ function Brand({ compact }: { compact?: boolean }) {
 }
 
 export function AppShell() {
+  const { pathname } = useLocation();
+  const isDedicatedGame = pathname.startsWith('/game/');
+  if (isDedicatedGame) {
+    return (
+      <div className="h-dvh w-full overflow-hidden bg-night-900">
+        <Outlet />
+      </div>
+    );
+  }
   return (
     <div className="min-h-dvh md:flex">
       {/* Desktop / tablet sidebar (>= md) */}
       <aside className="sticky top-0 hidden h-dvh w-20 shrink-0 flex-col border-r-2 border-ink bg-night-800 p-3 md:flex lg:w-60 lg:p-4">
         <div className="mb-8 px-1">
-          <span className="lg:hidden"><Brand compact /></span>
-          <span className="hidden lg:block"><Brand /></span>
+          <span className="lg:hidden">
+            <Brand compact />
+          </span>
+          <span className="hidden lg:block">
+            <Brand />
+          </span>
         </div>
         <nav className="flex flex-1 flex-col gap-1" aria-label="Primary">
           {navItems.map((item) => (

@@ -12,3 +12,8 @@ export async function submitCode(slug: string, code: string) {
   });
   return data.result;
 }
+
+export async function runExamples(slug: string, code: string) {
+  const { data } = await api.post<{ result: SubmissionResult }>(`/challenges/${slug}/run`, { code });
+  return data.result;
+}

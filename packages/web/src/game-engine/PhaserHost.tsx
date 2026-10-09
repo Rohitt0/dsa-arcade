@@ -6,6 +6,11 @@ interface PhaserHostProps {
   game: GameDefinition;
   loadScenes: GameSceneLoader;
   renderControls?: (controls: GameControl[], sendAction: (action: string) => void) => ReactNode;
+  className?: string;
+  canvasClassName?: string;
+  statusClassName?: string;
+  onEvent?: (event: GameEvent) => void;
+  progressScope?: string;
 }
 
 function describeEvent(event: GameEvent): string | null {
@@ -15,7 +20,9 @@ function describeEvent(event: GameEvent): string | null {
     case 'stage:started':
       return `Stage ${event.payload.stageNumber}: ${event.payload.stage.title}`;
     case 'checkpoint:reached':
-      return 'Checkpoint reached. Progress is not saved in this preview.';
+      return null;
+    case 'game:tutorial':
+      return null;
     case 'stage:completed':
       return 'Stage complete. Loading the next stage…';
     case 'game:completed':
@@ -31,7 +38,16 @@ function describeEvent(event: GameEvent): string | null {
   }
 }
 
-export function PhaserHost({ game, loadScenes, renderControls }: PhaserHostProps) {
+export function PhaserHost({
+  game,
+  loadScenes,
+  renderControls,
+  className,
+  canvasClassName,
+  statusClassName,
+  onEvent,
+  progressScope,
+}: PhaserHostProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('Loading game…');
   const [controls, setControls] = useState<GameControl[]>([]);
@@ -54,6 +70,7 @@ export function PhaserHost({ game, loadScenes, renderControls }: PhaserHostProps
 
         const bridge = new bridgeModule.GameBridge();
         unsubscribe = bridge.onAny((event) => {
+          onEvent?.(event);
           const message = describeEvent(event);
           if (message) setStatus(message);
           if (event.type === 'game:controls') setControls(event.payload.controls);
@@ -61,7 +78,7 @@ export function PhaserHost({ game, loadScenes, renderControls }: PhaserHostProps
         sendActionRef.current = (action) =>
           bridge.emit('game:input', { source: 'control', action });
 
-        const manager = new managerModule.GameManager(parent, game, scenes, bridge);
+        const manager = new managerModule.GameManager(parent, game, scenes, bridge, progressScope);
         destroyManager = () => manager.destroy();
       })
       .catch((error: unknown) => {
@@ -75,19 +92,22 @@ export function PhaserHost({ game, loadScenes, renderControls }: PhaserHostProps
       unsubscribe();
       destroyManager();
     };
-  }, [game, loadScenes]);
+  }, [game, loadScenes, onEvent, progressScope]);
 
   return (
-    <div>
+    <div className={className}>
       <div
         ref={parentRef}
         role="img"
         tabIndex={0}
         aria-label={`${game.title} game canvas. Tap the canvas or press Space to advance.`}
-        className="h-[55dvh] min-h-64 max-h-[36rem] w-full touch-manipulation overflow-hidden border-2 border-ink bg-night-800"
+        className={
+          canvasClassName ??
+          'h-[55dvh] min-h-64 max-h-[36rem] w-full touch-manipulation overflow-hidden border-2 border-ink bg-night-800'
+        }
       />
       {renderControls?.(controls, (action) => sendActionRef.current(action))}
-      <p role="status" aria-live="polite" className="mt-3 min-h-11 text-sm text-stone-300">
+      <p role="status" aria-live="polite" className={statusClassName ?? 'mt-3 min-h-11 text-sm text-stone-300'}>
         {status}
       </p>
     </div>

@@ -1,0 +1,9 @@
+{
+  "image": "hooded-boy-walk-8frames.png",
+  "frameWidth": 96,
+  "frameHeight": 112,
+  "frameCount": 8,
+  "frameRate": 8,
+  "repeat": -1,
+  "footBaseline": 103
+}

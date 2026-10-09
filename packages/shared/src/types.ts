@@ -61,6 +61,7 @@ export interface Challenge {
   difficulty: Difficulty;
   starterCode: string;
   sampleTests: ChallengeTestCase[];
+  savedSolution?: { code: string; completed: boolean };
 }
 
 export type SubmissionStatus =

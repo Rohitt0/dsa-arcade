@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
+import { PixelSpinner } from './PixelSpinner';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -34,6 +35,7 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
     <button
       ref={ref}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(
         'inline-flex items-center justify-center gap-2 font-pixel uppercase tracking-wide',
         'border-2 border-ink shadow-pixel transition-transform select-none',
@@ -47,7 +49,7 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
       {...props}
     >
       {loading && (
-        <span className="h-3 w-3 animate-spin border-2 border-ink border-t-transparent" aria-hidden />
+        <PixelSpinner decorative />
       )}
       {children}
     </button>

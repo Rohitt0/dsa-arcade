@@ -1,0 +1,9 @@
+{
+  "image": "hooded-boy-idle-4frames.png",
+  "frameWidth": 96,
+  "frameHeight": 112,
+  "frameCount": 4,
+  "frameRate": 4,
+  "repeat": -1,
+  "footBaseline": 103
+}

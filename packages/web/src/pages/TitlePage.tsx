@@ -9,7 +9,7 @@ export function TitlePage() {
     <main className="relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-night-900 px-4 py-10">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-8px] z-0 bg-[url('/images/sunset-above-cloud-sea.png')] bg-cover bg-center blur-[3px]"
+        className="pointer-events-none absolute inset-0 z-0 bg-[url('/images/scene-optimized-v2.webp')] bg-cover bg-center"
       />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 bg-night-900/40" />
       <div className="relative z-10 w-full max-w-xl text-center">

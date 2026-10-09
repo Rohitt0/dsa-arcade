@@ -18,12 +18,18 @@ const runnerReplySchema = z.object({
     .optional(),
 });
 
-export async function getChallengeBySlug(slug: string): Promise<Challenge> {
+export async function getChallengeBySlug(slug: string, userId?: string): Promise<Challenge> {
   const challenge = await prisma.challenge.findUnique({
     where: { slug },
     include: { testCases: { orderBy: { orderIndex: 'asc' } } },
   });
   if (!challenge) throw notFound('Challenge not found');
+
+  // Resume only this authenticated player's submissions; never include hidden test data.
+  const [latest, accepted] = userId ? await Promise.all([
+    prisma.submission.findFirst({ where: { userId, challengeId: challenge.id }, orderBy: { createdAt: 'desc' }, select: { code: true } }),
+    prisma.submission.findFirst({ where: { userId, challengeId: challenge.id, status: 'ACCEPTED' }, select: { id: true } }),
+  ]) : [null, null];
 
   return {
     id: challenge.id,
@@ -36,6 +42,7 @@ export async function getChallengeBySlug(slug: string): Promise<Challenge> {
     constraints: challenge.constraints,
     difficulty: challenge.difficulty,
     starterCode: challenge.starterCode,
+    ...(latest ? { savedSolution: { code: latest.code, completed: Boolean(accepted) } } : {}),
     sampleTests: challenge.testCases
       .filter((testCase) => !testCase.hidden)
       .map((testCase) => ({
@@ -47,6 +54,7 @@ export async function getChallengeBySlug(slug: string): Promise<Challenge> {
 }
 
 async function executeInRunner(
+  slug: string,
   sourceCode: string,
   testCases: Array<{ input: string; expected: string }>,
 ) {
@@ -58,7 +66,7 @@ async function executeInRunner(
         'content-type': 'application/json',
         'x-runner-token': env.RUNNER_TOKEN,
       },
-      body: JSON.stringify({ sourceCode, testCases }),
+      body: JSON.stringify({ sourceCode: toRunnerSource(slug, sourceCode), testCases }),
       signal: AbortSignal.timeout(55_000),
     });
   } catch {
@@ -85,6 +93,22 @@ async function executeInRunner(
   return parsed.data;
 }
 
+/** Append a normal judge harness for LeetCode-style function submissions. */
+function toRunnerSource(slug: string, sourceCode: string) {
+  if (slug !== 'maximum-sum-k-consecutive-crystals') return sourceCode;
+  return `${sourceCode}
+
+int main() {
+    int n, k;
+    if (!(cin >> n >> k)) return 0;
+    vector<int> crystals(n);
+    for (int& crystal : crystals) cin >> crystal;
+    cout << Solution().maxCrystalEnergy(crystals, k) << "\\n";
+    return 0;
+}
+`;
+}
+
 const supportedStatuses = new Set<SharedSubmissionStatus>([
   'ACCEPTED',
   'WRONG_ANSWER',
@@ -109,6 +133,7 @@ export async function submitChallenge(
   }
 
   const run = await executeInRunner(
+    slug,
     sourceCode,
     challenge.testCases.map(({ input, expected }) => ({ input, expected })),
   );
@@ -156,4 +181,43 @@ export async function submitChallenge(
     select: { id: true },
   });
   return { ...result, submissionId: saved.id };
+}
+
+export async function runChallenge(slug: string, sourceCode: string): Promise<SubmissionResult> {
+  const challenge = await prisma.challenge.findUnique({
+    where: { slug },
+    include: { testCases: { where: { hidden: false }, orderBy: { orderIndex: 'asc' } } },
+  });
+  if (!challenge) throw notFound('Challenge not found');
+  if (challenge.testCases.length === 0) {
+    throw new AppError(503, 'This challenge has no examples configured.', 'CHALLENGE_UNAVAILABLE');
+  }
+
+  const run = await executeInRunner(
+    slug,
+    sourceCode,
+    challenge.testCases.map(({ input, expected }) => ({ input, expected })),
+  );
+  const status: SharedSubmissionStatus = supportedStatuses.has(run.status as SharedSubmissionStatus)
+    ? (run.status as SharedSubmissionStatus)
+    : run.status === 'COMPILE_TIMEOUT' ? 'TIME_LIMIT' : 'RUNNER_ERROR';
+  const runnerTests = Array.isArray(run.results) ? run.results : [];
+  const tests = runnerTests.map((test, index) => {
+    const testCase = challenge.testCases[index];
+    return {
+      caseNumber: (testCase?.orderIndex ?? index) + 1,
+      hidden: false,
+      passed: test.passed === true,
+      expected: testCase?.expected ?? null,
+      actual: String(test.actual ?? '').slice(0, 16_384),
+    };
+  });
+  return {
+    submissionId: '',
+    status,
+    passed: tests.filter((test) => test.passed).length,
+    total: challenge.testCases.length,
+    ...(run.message ? { message: run.message.slice(0, 8_000) } : {}),
+    tests,
+  };
 }

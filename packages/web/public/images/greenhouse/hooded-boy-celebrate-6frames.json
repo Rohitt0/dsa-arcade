@@ -1,0 +1,17 @@
+{
+  "image": "hooded-boy-celebrate-6frames.png",
+  "frameWidth": 96,
+  "frameHeight": 112,
+  "frameCount": 6,
+  "frameRate": 6,
+  "repeat": 0,
+  "groundBaseline": 103,
+  "poses": [
+    "rest",
+    "crouch",
+    "fist raised",
+    "bounce",
+    "settle",
+    "rest"
+  ]
+}

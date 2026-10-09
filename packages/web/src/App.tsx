@@ -10,6 +10,7 @@ import { WorldMapPage } from './pages/WorldMapPage';
 import { RegionPage } from './pages/RegionPage';
 import { PatternPage } from './pages/PatternPage';
 import { ChallengePage } from './pages/ChallengePage';
+import { GreenhouseGamePage } from './pages/GreenhouseGamePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -41,6 +42,7 @@ export function App() {
             <Route path="/region/:slug" element={<RegionPage />} />
             <Route path="/pattern/:slug" element={<PatternPage />} />
             <Route path="/challenge/:slug" element={<ChallengePage />} />
+            <Route path="/game/greenhouse" element={<GreenhouseGamePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
