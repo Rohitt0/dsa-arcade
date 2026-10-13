@@ -49,7 +49,7 @@ export function BinarySearchGamePage() {
   const [earned, setEarned] = useState<number | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [layout, setLayout] = useState(readLayout);
-  const [floating, setFloating] = useState(false);
+  const [floating, setFloating] = useState(() => window.innerWidth >= 1024);
   const [floatingRect, setFloatingRect] = useState(readFloatingRect);
   const [mobileView, setMobileView] = useState<'game' | 'code'>('game');
   const [problemOpen, setProblemOpen] = useState(true);
@@ -146,6 +146,7 @@ export function BinarySearchGamePage() {
     const workspace = shellRef.current?.getBoundingClientRect();
     if (!panel || !workspace) return;
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     const x = floating ? floatingRect.x : panel.left - workspace.left;
     const y = floating ? floatingRect.y : panel.top - workspace.top;
     dragRef.current = { px: event.clientX, py: event.clientY, x, y };
@@ -159,6 +160,7 @@ export function BinarySearchGamePage() {
   };
   const beginWorkbenchResize = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault(); event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
     resizeRef.current = { px: event.clientX, py: event.clientY, width: floatingRect.width, height: floatingRect.height };
     document.body.style.cursor = 'nwse-resize'; document.body.style.userSelect = 'none';
   };
@@ -175,13 +177,13 @@ export function BinarySearchGamePage() {
     <div ref={shellRef} className={`relative grid min-h-0 min-w-0 ${tutorial?.active || !canEdit || floating ? '[grid-template-columns:minmax(0,1fr)]' : 'lg:[grid-template-columns:minmax(0,var(--game-fr))_12px_minmax(400px,var(--code-fr))]'} grid-cols-1`} style={{ '--game-fr': `${layout.split}fr`, '--code-fr': `${100 - layout.split}fr` } as React.CSSProperties}>
       <section className={`relative min-h-0 min-w-0 overflow-hidden bg-[#101b25] ${canEdit && mobileView === 'code' ? 'hidden lg:block' : ''}`} aria-label="Observatory game scene">
         <PhaserHost game={binarySearchGame} loadScenes={loadScenes} progressScope={scope} initialStageId={binarySearchStage.id} autoAdvance={false} onEvent={onEvent} renderControls={controls} className="h-full min-h-0 w-full" canvasClassName="h-full w-full overflow-hidden pixelated" statusClassName="sr-only" />
-        {!tutorial?.active && <span className="pointer-events-none absolute left-3 top-3 z-10 border border-[#526d63] bg-[#101b20]/90 px-3 py-2 font-mono text-xs text-[#c5dfc5]">Signal offline</span>}
+        {!tutorial?.active && <span className="pointer-events-none absolute left-3 top-3 z-10 border border-[#526d63] bg-[#101b20]/90 px-3 py-2 font-mono text-xs text-[#c5dfc5]">{completed ? 'Signal restored' : 'Signal offline'}</span>}
       </section>
       {canEdit && !tutorial?.active && !floating && <div role="separator" aria-label="Resize game and code panels" aria-orientation="vertical" aria-valuenow={layout.split} tabIndex={0} className="group z-20 hidden cursor-col-resize touch-none items-center justify-center bg-[#101820] hover:bg-[#20352f] lg:flex" onPointerDown={(event) => { event.preventDefault(); splitDrag.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }} onKeyDown={(event) => { if (event.key === 'ArrowLeft') setLayout((current) => ({ ...current, split: Math.min(74, current.split + 2) })); if (event.key === 'ArrowRight') setLayout((current) => ({ ...current, split: Math.max(46, current.split - 2) })); }}><span className="h-12 w-1 rounded bg-[#718078] group-hover:bg-[#c6d89e]" /></div>}
       {canEdit && <aside style={floating ? { left: floatingRect.x, top: floatingRect.y, width: floatingRect.width, height: floatingRect.height } : undefined} className={`min-h-0 min-w-0 flex-col border-2 border-[#52625b] bg-[#11191e] ${floating ? 'absolute z-30 flex resize-none overflow-hidden shadow-[8px_8px_0_#080f12]' : `overflow-y-auto lg:overflow-hidden ${mobileView === 'game' ? 'hidden lg:flex' : 'flex lg:flex'}`}`}>
         <div onPointerDown={beginWorkbenchDrag} className={`flex min-h-11 shrink-0 items-center justify-between gap-2 border-b border-[#354047] bg-[#1b252b] px-3 ${window.innerWidth >= 1024 ? 'touch-none cursor-grab active:cursor-grabbing' : ''}`}>
           <span className="font-pixel text-[8px] uppercase tracking-wider text-[#d8c992]">C++ Workbench</span>
-          <div className="flex items-center gap-2"><span className="hidden font-mono text-[10px] text-[#9ac9a0] sm:inline">{floating ? 'Drag title · resize corner' : 'Drag title to move'}</span>{floating && <button type="button" onClick={() => setFloating(false)} className="min-h-8 border border-[#657b73] px-2 text-[10px] text-[#d5e3d6]">Dock</button>}<button type="button" onClick={resetLayout} className="min-h-8 border border-[#657b73] px-2 text-[10px] text-[#d5e3d6]">Reset layout</button></div>
+          <div className="flex items-center gap-2"><span className="hidden font-mono text-[10px] text-[#9ac9a0] sm:inline">{floating ? 'Drag title · resize corner' : 'Drag title to move'}</span>{floating ? <button type="button" onClick={() => setFloating(false)} className="min-h-8 border border-[#657b73] px-2 text-[10px] text-[#d5e3d6]">Dock</button> : <button type="button" onClick={() => { setFloatingRect(readFloatingRect()); setFloating(true); }} className="min-h-8 border border-[#91bd7b] bg-[#263a30] px-2 text-[10px] text-[#e3f0d7]">Float</button>}<button type="button" onClick={resetLayout} className="min-h-8 border border-[#657b73] px-2 text-[10px] text-[#d5e3d6]">Reset layout</button></div>
         </div>
         <section className="min-h-0 shrink-0 overflow-y-auto border-b border-[#354047] px-3 py-2" style={{ height: problemOpen ? `min(${layout.problemHeight}px, 24dvh)` : 40 }}>
           <button type="button" aria-expanded={problemOpen} onClick={() => setProblemOpen((open) => !open)} className="flex min-h-7 w-full items-center justify-between text-left"><span className="font-pixel text-[8px] uppercase tracking-wider text-[#d8c992]">Problem · {challenge.data?.title ?? 'Find the Signal'}</span><span aria-hidden="true">{problemOpen ? '−' : '+'}</span></button>
@@ -205,7 +207,7 @@ export function BinarySearchGamePage() {
             {resultsOpen && <div aria-live="polite" className="max-h-24 overflow-y-auto text-xs">{(run.isError || submit.isError) ? <p role="alert" className="text-[#ff9a7d]">The C++ runner could not be reached. Check the API and runner, then retry.</p> : displayedResult && <><p className={displayedResult.status === 'ACCEPTED' ? 'text-[#9ce5a6]' : 'text-[#ffab91]'}>{displayedResult.passed} / {displayedResult.total} cases passed {result?.xpAward?.awarded ? `· +${result.xpAward.amount} XP` : ''}</p>{displayedResult.message && <pre className="whitespace-pre-wrap text-[#ffb59a]">{displayedResult.message}</pre>}</>}</div>}
           </div>}
         </footer>
-        {floating && <button type="button" aria-label="Resize C++ workbench" onPointerDown={beginWorkbenchResize} className="absolute bottom-0 right-0 z-10 h-5 w-5 cursor-nwse-resize border-l border-t border-[#99b77e] bg-[#263a30]"><span aria-hidden="true" className="block text-center text-xs leading-4 text-[#d4e6c9]">⌟</span></button>}
+        {floating && <button type="button" aria-label="Resize C++ workbench" onPointerDown={beginWorkbenchResize} className="absolute bottom-0 right-0 z-10 h-7 w-7 touch-none cursor-nwse-resize border-l-2 border-t-2 border-[#99b77e] bg-[#263a30] hover:bg-[#496044]"><span aria-hidden="true" className="block text-center text-sm leading-6 text-[#d4e6c9]">↘</span></button>}
       </aside>}
     </div>
     {success && <section role="dialog" aria-modal="false" aria-labelledby="binary-success" className="absolute inset-x-3 bottom-4 z-40 mx-auto max-w-lg border-2 border-[#b4cc83] bg-[#142126]/[.98] p-5 text-center shadow-[6px_6px_0_#080f12]"><p className="font-pixel text-[9px] uppercase tracking-widest text-[#bfe4ae]">Stage complete</p><h2 id="binary-success" className="mt-3 font-pixel text-[10px] leading-relaxed text-[#f0dca0]">Signal located at index 5!</h2><p className={`mt-3 text-sm ${earned !== null && earned > 0 ? 'motion-safe:animate-pulse text-[#bfe4ae]' : 'text-[#d1dbd1]'}`}>{completed && earned === 0 ? 'Stage complete — XP already earned.' : earned !== null ? `+${earned} XP earned.` : 'Your completion has been saved.'}</p><div className="mt-4 flex justify-center gap-3"><button type="button" onClick={() => { setEarned(null); setTutorial(null); sceneActionRef.current('mission:replay'); }} className="min-h-10 border border-[#a7c894] px-3 font-pixel text-[8px] text-[#e7f1dc]">Replay</button><Link to="/pattern/binary-search" className="inline-flex min-h-10 items-center border border-[#728c7b] px-3 font-pixel text-[8px] text-[#dbedda]">Back to Stages</Link></div></section>}

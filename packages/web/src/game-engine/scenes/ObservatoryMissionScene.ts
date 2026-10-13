@@ -58,7 +58,7 @@ export class ObservatoryMissionScene extends Phaser.Scene {
     this.anims.create({ key: 'obs-idle', frames: this.anims.generateFrameNumbers('obs-boy-idle'), frameRate: 4, repeat: -1 });
     this.anims.create({ key: 'obs-walk', frames: this.anims.generateFrameNumbers('obs-boy-walk'), frameRate: 8, repeat: -1 });
     this.anims.create({ key: 'obs-scan', frames: this.anims.generateFrameNumbers('obs-boy-scan'), frameRate: 6, repeat: 0 });
-    this.anims.create({ key: 'obs-celebrate', frames: this.anims.generateFrameNumbers('obs-boy-celebrate'), frameRate: 8, repeat: 0 });
+    this.anims.create({ key: 'obs-celebrate', frames: this.anims.generateFrameNumbers('obs-boy-celebrate'), frameRate: 6, repeat: -1 });
     this.anims.create({ key: 'obs-gold-pulse', frames: this.anims.generateFrameNumbers('obs-pulse'), frameRate: 10, repeat: 0 });
     this.anims.create({ key: 'obs-mote-fly', frames: this.anims.generateFrameNumbers('obs-mote'), frameRate: 8, repeat: -1 });
     this.build();
@@ -107,10 +107,13 @@ export class ObservatoryMissionScene extends Phaser.Scene {
     const bgSource = bg.texture.getSourceImage() as HTMLImageElement;
     const bgScale = Math.max(w / bgSource.width, h / bgSource.height);
     bg.setOrigin(0.5).setPosition(Math.round(w / 2), Math.round(h / 2)).setScale(bgScale);
-    const groundY = Math.round(h * 0.94);
     const floor = this.data.get('floor') as Phaser.GameObjects.Image;
     const floorSource = floor.texture.getSourceImage() as HTMLImageElement;
-    floor.setOrigin(0, 1).setScale(w / floorSource.width).setPosition(0, groundY);
+    const floorScale = w / floorSource.width;
+    const floorBottomY = Math.round(h * 0.965);
+    // The walkway PNG has four transparent rows above its painted top edge.
+    const groundY = Math.round(floorBottomY - (floorSource.height - 4) * floorScale);
+    floor.setOrigin(0, 1).setScale(floorScale).setPosition(0, floorBottomY);
     const rowY = Math.round(h * 0.56);
     const centerX = Math.round(w * 0.5);
     const rowWidth = Math.min(w * 0.78, 760);
@@ -162,9 +165,10 @@ export class ObservatoryMissionScene extends Phaser.Scene {
     const telescope = this.data.get('telescope') as Phaser.GameObjects.Image;
     const telescopeSource = telescope.texture.getSourceImage() as HTMLImageElement;
     const telescopeScale = Math.min(1.2, 128 / Math.max(telescopeSource.width, telescopeSource.height));
-    telescope.setScale(telescopeScale).setPosition(Math.round(w * 0.88), groundY + Math.round(8 * telescopeScale));
+    // Both sprites include eight transparent pixels below their painted feet/base.
+    telescope.setScale(telescopeScale).setPosition(Math.round(w * 0.88), Math.round(groundY + 8 * telescopeScale));
     const boyScale = Math.min(1.28, Math.max(0.88, (h * 0.18) / 112));
-    this.boy.setScale(boyScale).setPosition(Math.round(w * 0.13), Math.round(groundY + 9 * boyScale));
+    this.boy.setScale(boyScale).setPosition(Math.round(w * 0.13), Math.round(groundY + 8 * boyScale));
   };
 
   private publish(title: string, message: string, step: string, choices?: { id: string; label: string }[]) {
@@ -297,7 +301,7 @@ export class ObservatoryMissionScene extends Phaser.Scene {
     while (left <= right) { const mid = left + Math.floor((right - left) / 2); if (readings[mid] === binarySearchStage.example.target) { found = mid; break; } if (readings[mid]! < binarySearchStage.example.target) left = mid + 1; else right = mid - 1; }
     this.midpoint = found; this.lensVisible = found >= 0; this.layout();
     if (found >= 0) { this.add.sprite(this.lens.x, this.lens.y, 'obs-pulse').play('obs-gold-pulse'); const mote = this.add.sprite(this.scale.width * 0.6, this.scale.height * 0.76, 'obs-mote').play('obs-mote-fly'); this.tweens.add({ targets: mote, x: this.scale.width * 0.89, y: this.scale.height * 0.59, duration: 900, onComplete: () => mote.destroy() }); }
-    this.boy.play('obs-celebrate'); this.boy.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.boy.play('obs-idle'));
+    this.boy.play('obs-celebrate');
     this.runtime.bridge.emit('game:binary-tutorial', { active: false, title: 'Signal located at index 5!', message: 'Signal located at index 5!', step: 'success', found: true });
   }
   private shutdown() { this.unsubscribe?.(); this.unsubscribe = undefined; this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this); this.tweens.killAll(); this.objects = []; this.tiles = []; this.values = []; this.indices = []; }
