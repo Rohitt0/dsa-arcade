@@ -1,6 +1,17 @@
 import { timingSafeEqual } from 'node:crypto';
+import { accessSync, constants } from 'node:fs';
 import { createServer } from 'node:http';
 import { executeCpp } from './sandbox.mjs';
+
+// A generic Node deployment can start HTTP successfully but cannot judge C++.
+for (const executable of ['/usr/bin/g++', '/usr/bin/prlimit', '/usr/bin/timeout']) {
+  try {
+    accessSync(executable, constants.X_OK);
+  } catch {
+    console.error(`Runner dependency missing: ${executable}. Deploy packages/runner/Dockerfile.`);
+    process.exit(1);
+  }
+}
 
 const port = Number(process.env.RUNNER_PORT ?? 4010);
 const token = process.env.RUNNER_TOKEN ?? '';

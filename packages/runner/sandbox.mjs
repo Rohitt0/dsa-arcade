@@ -92,6 +92,12 @@ export async function executeCpp({ sourceCode, testCases }) {
       };
     }
     if (compilation.error || compilation.status !== 0) {
+      if (compilation.error || compilation.status === 126 || compilation.status === 127) {
+        return {
+          status: 'RUNNER_ERROR',
+          message: 'The C++ compiler could not start. The runner deployment needs repair.',
+        };
+      }
       return {
         status: 'COMPILE_ERROR',
         message: (
