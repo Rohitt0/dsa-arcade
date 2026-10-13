@@ -35,6 +35,7 @@ model User {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   submissions  Submission[]
+  stageXpGrants StageXpGrant[]
 
   @@map("users")
 }
@@ -124,4 +125,17 @@ model Submission {
 
   @@index([userId, challengeId, createdAt])
   @@map("submissions")
+}
+
+model StageXpGrant {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stageId   String   @map("stage_id")
+  amount    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, stageId])
+  @@index([userId, createdAt])
+  @@map("stage_xp_grants")
 }

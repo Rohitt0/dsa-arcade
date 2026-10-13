@@ -1,0 +1,12 @@
+{
+  "image": "energy-mote-4frames.png",
+  "frameWidth": 24,
+  "frameHeight": 16,
+  "frameCount": 4,
+  "coreCenter": {
+    "x": 15,
+    "y": 8
+  },
+  "frameRate": 8,
+  "repeat": -1
+}

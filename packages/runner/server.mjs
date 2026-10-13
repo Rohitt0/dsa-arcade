@@ -35,11 +35,11 @@ function validPayload(payload) {
     payload.sourceCode.length <= 30_000 &&
     Array.isArray(payload.testCases) &&
     payload.testCases.length >= 1 &&
-    payload.testCases.length <= 10 &&
+    payload.testCases.length <= 20 &&
     payload.testCases.every(
       (test) =>
         typeof test.input === 'string' &&
-        test.input.length <= 4_096 &&
+        test.input.length <= 220_000 &&
         typeof test.expected === 'string' &&
         test.expected.length <= 16_384,
     )

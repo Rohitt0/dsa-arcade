@@ -1,0 +1,13 @@
+{
+  "image": "golden-pulse-6frames.png",
+  "frameWidth": 33,
+  "frameHeight": 33,
+  "frameCount": 6,
+  "center": {
+    "x": 16,
+    "y": 16
+  },
+  "frameRate": 10,
+  "repeat": 0,
+  "finalFrame": "fully transparent"
+}

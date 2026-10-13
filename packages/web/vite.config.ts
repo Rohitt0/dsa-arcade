@@ -27,6 +27,12 @@ export default defineConfig({
     // checkout it can fail with EPERM even though the file is readable.
     preserveSymlinks: true,
   },
+  // This workspace package points directly at TypeScript source. Keeping it
+  // out of Vite's dependency prebundle avoids stale exports after shared types
+  // and data are added during development.
+  optimizeDeps: {
+    exclude: ['@dsa/shared', '@dsa/shared/greenhouse'],
+  },
   server: {
     port: 5173,
     watch: {

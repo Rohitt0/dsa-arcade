@@ -20,12 +20,14 @@ export class GameManager {
     sceneFactories: GameSceneRegistry,
     bridge: GameBridge = new GameBridge(),
     progressScope = 'guest',
+    initialStageId?: string,
+    autoAdvance = true,
   ) {
     this.bridge = bridge;
     this.levels = new LevelManager(definition);
     this.progress = new ProgressManager(definition.id, this.bridge, progressScope);
 
-    const firstStage = this.levels.currentStage;
+    const firstStage = initialStageId ? this.levels.select(initialStageId) : this.levels.currentStage;
     if (!firstStage) throw new Error('The game has no playable stages.');
     const firstFactory = sceneFactories[firstStage.sceneKey];
     if (!firstFactory) throw new Error(`No Phaser scene registered for "${firstStage.sceneKey}".`);
@@ -46,18 +48,19 @@ export class GameManager {
     };
 
     // Subscribe before boot so an early scene event cannot be missed.
-    this.unsubscribeStageComplete = this.bridge.on('stage:completed', ({ stageId }) => {
+    this.unsubscribeStageComplete = this.bridge.on('stage:completed', ({ stageId, score }) => {
       const result = this.levels.complete(stageId);
       if (!result.accepted) return;
+      this.bridge.emit('stage:accepted', { gameId: definition.id, stageId, score });
 
-      if (result.nextStage) {
+      if (autoAdvance && result.nextStage) {
         this.bridge.emit('stage:started', {
           gameId: definition.id,
           stage: result.nextStage,
           stageNumber: this.levels.currentStageNumber,
         });
         this.scenes.start(result.nextStage);
-      } else if (result.gameCompleted) {
+      } else if (autoAdvance && result.gameCompleted) {
         this.bridge.emit('game:completed', { gameId: definition.id });
       }
     });
@@ -70,14 +73,14 @@ export class GameManager {
       backgroundColor: '#141633',
       pixelArt: true,
       antialias: false,
-      scene: [firstFactory(runtime)],
+      scene: [firstFactory(runtime, firstStage)],
       scale: { mode: Phaser.Scale.RESIZE },
     });
     this.scenes = new SceneManager(this.game, sceneFactories, runtime, firstStage.sceneKey);
     this.bridge.emit('stage:started', {
       gameId: definition.id,
       stage: firstStage,
-      stageNumber: 1,
+      stageNumber: this.levels.currentStageNumber,
     });
   }
 

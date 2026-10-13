@@ -82,6 +82,7 @@ export interface SubmissionResult {
   total: number;
   message?: string;
   tests: SubmissionTestResult[];
+  xpAward?: { stageId: string; awarded: boolean; amount: number; totalXp: number };
 }
 
 /** Standard success envelopes. */

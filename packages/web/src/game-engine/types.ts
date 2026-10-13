@@ -14,8 +14,15 @@ export interface GameControl {
 export interface StageDefinition {
   id: string;
   title: string;
+  objective: string;
+  leetcode?: {
+    title: string;
+    url: string;
+    relationship: 'adapted' | 'related';
+  };
   sceneKey: string;
   difficulty: number;
+  rewardXp?: number;
   config: Record<string, ProgressValue>;
 }
 
@@ -38,12 +45,18 @@ export interface CheckpointPayload {
 }
 
 export interface GameEventMap {
+  'game:binary-tutorial': { active: boolean; title: string; message: string; step: string; choices?: { id: string; label: string }[]; found?: boolean };
   'game:tutorial': TutorialState;
   'game:ready': { gameId: string };
   'game:error': { message: string };
   'game:completed': { gameId: string };
   'stage:started': { gameId: string; stage: StageDefinition; stageNumber: number };
   'stage:completed': { gameId: string; stageId: string; score: number };
+  'stage:accepted': { gameId: string; stageId: string; score: number };
+  'game:mission-intro': { stageId: string; title: string; message: string };
+  'game:mission-success': { stageId: string; count: number; message: string };
+  'game:transition-ready': { stageId: string };
+  'game:departure-ready': { destination: string };
   'game:input': GameInput;
   'game:controls': { stageId: string; controls: GameControl[] };
   'game:lesson': { message: string };
@@ -63,6 +76,6 @@ export interface GameRuntime {
   completeStage(stageId: string, score: number): void;
 }
 
-export type GameSceneFactory = (runtime: GameRuntime) => Phaser.Scene;
+export type GameSceneFactory = (runtime: GameRuntime, initialStage?: StageDefinition) => Phaser.Scene;
 export type GameSceneRegistry = Record<string, GameSceneFactory>;
 export type GameSceneLoader = () => Promise<GameSceneRegistry>;

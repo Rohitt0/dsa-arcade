@@ -46,6 +46,19 @@ test('new player must explicitly scan and slide; arithmetic is 13 then 10', () =
   assert.deepEqual(h.finishes, [{ skipped: false, replay: false }]);
 });
 
+test('Stage 4 practice advances only on player input and keeps its practice row isolated', () => {
+  const h = harness();
+  h.controller.start(false, 'greenhouse-keep-vines-warm');
+  const expected = ['s4intro','s4one','s4two','s4three','s4four','s4five','s4six','s4seven','s4finish'] as const;
+  for (const step of expected) {
+    assert.equal(h.controller.state.step, step);
+    h.complete();
+    assert.equal(h.controller.state.step, step, 'tutorial must wait for a player click');
+    h.controller.advance(step);
+  }
+  assert.deepEqual(h.finishes, [{ skipped: false, replay: false }]);
+});
+
 test('rapid duplicate clicks and stale actions cannot skip steps or duplicate effects', () => {
   const h = harness();
   h.controller.start();
@@ -58,7 +71,7 @@ test('rapid duplicate clicks and stale actions cannot skip steps or duplicate ef
 });
 
 test('skip at every step cancels effects and rejects late animation callbacks', () => {
-  for (const target of Object.keys(tutorialSteps) as TutorialStep[]) {
+  for (const target of ['arrival','introduction','discover','collector','scan','scanned','remove','add','stage'] as TutorialStep[]) {
     const h = harness();
     h.controller.start();
     while (h.controller.state.step !== target) {

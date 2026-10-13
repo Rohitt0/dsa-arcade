@@ -1,29 +1,31 @@
-import { tutorialSteps, type TutorialState, type TutorialStep } from './content/greenhouse-tutorial';
+import { tutorialOrders, tutorialSteps, type TutorialState, type TutorialStep } from './content/greenhouse-tutorial';
 
 interface TutorialHooks {
   publish(state: TutorialState): void;
   enter(step: TutorialStep, done: () => void): () => void;
   finish(skipped: boolean, replay: boolean): void;
 }
-const order = Object.keys(tutorialSteps) as TutorialStep[];
 
 /** Only this controller advances onboarding. Effects return a scoped cancellation function. */
 export class GreenhouseTutorialController {
   state: TutorialState = { active: false, step: 'arrival', busy: false, replay: false };
   private cancelEffect = () => {};
   private generation = 0;
+  private order: TutorialStep[] = tutorialOrders['greenhouse-maximum-crystal-energy']!;
 
   constructor(private readonly hooks: TutorialHooks) {}
 
-  start(replay = false) {
+  start(replay = false, stageId = 'greenhouse-maximum-crystal-energy') {
     this.dispose();
-    this.state = { active: true, step: 'arrival', busy: false, replay };
-    this.go('arrival');
+    this.order = tutorialOrders[stageId] ?? tutorialOrders['greenhouse-maximum-crystal-energy']!;
+    const first = this.order[0]!;
+    this.state = { active: true, step: first, busy: false, replay };
+    this.go(first);
   }
 
   advance(expectedStep: string) {
     if (!this.state.active || this.state.busy || this.state.step !== expectedStep) return;
-    const next = order[order.indexOf(this.state.step) + 1];
+    const next = this.order[this.order.indexOf(this.state.step) + 1];
     if (next) this.go(next);
     else this.finish(false);
   }

@@ -11,6 +11,8 @@ interface PhaserHostProps {
   statusClassName?: string;
   onEvent?: (event: GameEvent) => void;
   progressScope?: string;
+  initialStageId?: string;
+  autoAdvance?: boolean;
 }
 
 function describeEvent(event: GameEvent): string | null {
@@ -22,9 +24,16 @@ function describeEvent(event: GameEvent): string | null {
     case 'checkpoint:reached':
       return null;
     case 'game:tutorial':
+    case 'game:binary-tutorial':
       return null;
     case 'stage:completed':
       return 'Stage complete. Loading the next stage…';
+    case 'stage:accepted':
+    case 'game:mission-intro':
+    case 'game:mission-success':
+    case 'game:transition-ready':
+    case 'game:departure-ready':
+      return null;
     case 'game:completed':
       return 'Preview complete. You can play it again by revisiting this page.';
     case 'game:error':
@@ -47,6 +56,8 @@ export function PhaserHost({
   statusClassName,
   onEvent,
   progressScope,
+  initialStageId,
+  autoAdvance = true,
 }: PhaserHostProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('Loading game…');
@@ -78,7 +89,7 @@ export function PhaserHost({
         sendActionRef.current = (action) =>
           bridge.emit('game:input', { source: 'control', action });
 
-        const manager = new managerModule.GameManager(parent, game, scenes, bridge, progressScope);
+        const manager = new managerModule.GameManager(parent, game, scenes, bridge, progressScope, initialStageId, autoAdvance);
         destroyManager = () => manager.destroy();
       })
       .catch((error: unknown) => {
@@ -92,7 +103,7 @@ export function PhaserHost({
       unsubscribe();
       destroyManager();
     };
-  }, [game, loadScenes, onEvent, progressScope]);
+  }, [game, loadScenes, onEvent, progressScope, initialStageId, autoAdvance]);
 
   return (
     <div className={className}>

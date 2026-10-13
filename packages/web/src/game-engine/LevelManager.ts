@@ -32,6 +32,13 @@ export class LevelManager {
     return this.currentIndex + 1;
   }
 
+  select(stageId: string) {
+    const index = this.game.stages.findIndex((stage) => stage.id === stageId);
+    if (index < 0) throw new Error(`Unknown stage "${stageId}".`);
+    this.currentIndex = index;
+    return this.currentStage;
+  }
+
   complete(stageId: string): StageCompletion {
     const current = this.currentStage;
     if (!current || current.id !== stageId || this.completed.has(stageId)) {

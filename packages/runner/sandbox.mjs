@@ -6,8 +6,8 @@ import { join } from 'node:path';
 const WORKER_UID = 65534;
 const WORKER_GID = 65534;
 const MAX_CODE_LENGTH = 30_000;
-const MAX_TESTS = 10;
-const MAX_INPUT_LENGTH = 4_096;
+const MAX_TESTS = 20;
+const MAX_INPUT_LENGTH = 220_000;
 const MAX_OUTPUT_LENGTH = 16_384;
 const MINIMAL_ENV = { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', HOME: '/tmp' };
 

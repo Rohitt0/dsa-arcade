@@ -3,5 +3,5 @@ import { greenhouseGame } from './greenhouse';
 import { GreenhouseMissionScene } from '../scenes/GreenhouseMissionScene';
 
 export const greenhouseScenes: GameSceneRegistry = {
-  GreenhouseMissionScene: (runtime) => new GreenhouseMissionScene(runtime, greenhouseGame.stages[0]!),
+  GreenhouseMissionScene: (runtime, initialStage) => new GreenhouseMissionScene(runtime, initialStage ?? greenhouseGame.stages[0]!),
 };

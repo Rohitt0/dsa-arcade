@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 
 type IconName = 'map' | 'grid' | 'user';
@@ -45,8 +45,8 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
 }
 
 const navItems: { to: string; label: string; icon: IconName }[] = [
-  { to: '/world', label: 'World', icon: 'map' },
-  { to: '/dashboard', label: 'Dashboard', icon: 'grid' },
+  { to: '/world', label: 'Adventures', icon: 'map' },
+  { to: '/dashboard', label: 'Progress', icon: 'grid' },
   { to: '/profile', label: 'Profile', icon: 'user' },
 ];
 
@@ -65,6 +65,7 @@ function Brand({ compact }: { compact?: boolean }) {
 
 export function AppShell() {
   const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isDedicatedGame = pathname.startsWith('/game/');
   if (isDedicatedGame) {
     return (
@@ -74,71 +75,31 @@ export function AppShell() {
     );
   }
   return (
-    <div className="min-h-dvh md:flex">
-      {/* Desktop / tablet sidebar (>= md) */}
-      <aside className="sticky top-0 hidden h-dvh w-20 shrink-0 flex-col border-r-2 border-ink bg-night-800 p-3 md:flex lg:w-60 lg:p-4">
-        <div className="mb-8 px-1">
-          <span className="lg:hidden">
-            <Brand compact />
-          </span>
-          <span className="hidden lg:block">
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-30 border-b-2 border-ink bg-night-900/95 backdrop-blur">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <NavLink to="/world" aria-label="DSA Arcade Adventures" className="rounded-sm focus-visible:ring-2 focus-visible:ring-gold">
             <Brand />
-          </span>
-        </div>
-        <nav className="flex flex-1 flex-col gap-1" aria-label="Primary">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-h-[44px] items-center justify-center gap-3 border-2 px-2 font-pixel text-[10px] uppercase tracking-wide transition-colors lg:justify-start lg:px-3',
-                  isActive
-                    ? 'border-ink bg-gold text-ink'
-                    : 'border-transparent text-stone-300 hover:bg-night-700 hover:text-parchment',
-                )
-              }
-            >
-              <Icon name={item.icon} />
-              <span className="sr-only lg:not-sr-only">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Mobile top bar (< md) */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b-2 border-ink bg-night-800 px-4 md:hidden">
-        <Brand />
-      </header>
-
-      {/* Main content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-5 pb-24 sm:px-6 md:pb-8">
-          <Outlet />
-        </main>
-      </div>
-
-      {/* Mobile bottom nav (< md) — fixed, one-handed reachable, 44px+ targets */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t-2 border-ink bg-night-800 pb-[env(safe-area-inset-bottom)] md:hidden"
-        aria-label="Primary"
-      >
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              cn(
-                'flex min-h-[56px] flex-col items-center justify-center gap-1 font-pixel text-[8px] uppercase tracking-wide',
-                isActive ? 'bg-night-700 text-gold' : 'text-stone-300',
-              )
-            }
-          >
-            <Icon name={item.icon} />
-            {item.label}
           </NavLink>
-        ))}
-      </nav>
+          <button type="button" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((open) => !open)} className="grid h-11 w-11 place-items-center border-2 border-ink text-parchment sm:hidden">
+            <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
+            <span aria-hidden="true" className="font-pixel text-xs">{menuOpen ? '×' : '☰'}</span>
+          </button>
+          <nav id="primary-navigation" aria-label="Primary" className={cn('absolute inset-x-0 top-full border-b-2 border-ink bg-night-900 px-4 py-3 sm:static sm:flex sm:border-0 sm:bg-transparent sm:p-0', menuOpen ? 'flex flex-col gap-2' : 'hidden sm:flex sm:items-center sm:gap-2')}>
+            {navItems.map((item) => (
+              <NavLink key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className={({ isActive }) => {
+                const active = isActive || (item.to === '/world' && (pathname.startsWith('/pattern/') || pathname.startsWith('/region/')));
+                return cn('flex min-h-11 items-center gap-2 border-2 px-3 font-pixel text-[9px] uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold', active ? 'border-gold bg-night-700 text-gold' : 'border-transparent text-stone-300 hover:border-night-600 hover:text-parchment');
+              }}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 sm:py-10">
+        <Outlet />
+      </main>
     </div>
   );
 }

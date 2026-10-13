@@ -4,6 +4,7 @@ import type {
   SubmissionResult,
   SubmissionStatus as SharedSubmissionStatus,
 } from '@dsa/shared';
+import { getStageRewardByChallenge } from '@dsa/shared';
 import { prisma } from '../../lib/prisma';
 import { AppError, notFound } from '../../lib/errors';
 import { env } from '../../config/env';
@@ -14,7 +15,7 @@ const runnerReplySchema = z.object({
   message: z.string().max(8_000).optional(),
   results: z
     .array(z.object({ passed: z.boolean(), actual: z.string().max(16_384) }))
-    .max(10)
+    .max(20)
     .optional(),
 });
 
@@ -95,6 +96,61 @@ async function executeInRunner(
 
 /** Append a normal judge harness for LeetCode-style function submissions. */
 function toRunnerSource(slug: string, sourceCode: string) {
+  if (slug === 'find-the-signal') {
+    return `${sourceCode}
+
+int main() {
+    int n, target;
+    if (!(cin >> n >> target)) return 0;
+    vector<int> readings(n);
+    for (int& reading : readings) cin >> reading;
+    cout << Solution().findSignal(readings, target) << "\\n";
+    return 0;
+}
+`;
+  }
+  if (slug === 'longest-crystal-budget') {
+    return `${sourceCode}
+
+int main() {
+    int n;
+    long long budget;
+    if (!(cin >> n >> budget)) return 0;
+    vector<int> crystals(n);
+    for (int& crystal : crystals) cin >> crystal;
+    cout << Solution().longestWarmStretch(crystals, budget) << endl;
+    return 0;
+}
+`;
+  }
+  if (slug === 'minimum-crystal-burst') {
+    return `${sourceCode}
+
+int main() {
+    int n;
+    long long target;
+    if (!(cin >> n >> target)) return 0;
+    vector<int> crystals(n);
+    for (int& crystal : crystals) cin >> crystal;
+    cout << Solution().minCrystalBurst(crystals, target) << endl;
+    return 0;
+}
+`;
+  }
+  if (slug === 'reliable-crystal-windows') {
+    return `${sourceCode}
+
+int main() {
+    int n, k;
+    long long target;
+    if (!(cin >> n >> k >> target)) return 0;
+    vector<int> crystals(n);
+    for (int& crystal : crystals) cin >> crystal;
+    cout << Solution().countPowerWindows(crystals, k, target) << endl;
+    return 0;
+}
+`;
+  }
   if (slug !== 'maximum-sum-k-consecutive-crystals') return sourceCode;
   return `${sourceCode}
 
@@ -180,7 +236,26 @@ export async function submitChallenge(
     },
     select: { id: true },
   });
-  return { ...result, submissionId: saved.id };
+  const xpAward = status === 'ACCEPTED' ? await grantStageXp(userId, slug) : undefined;
+  return { ...result, submissionId: saved.id, ...(xpAward ? { xpAward } : {}) };
+}
+
+/** A unique grant row and the user's XP update commit or roll back together. */
+async function grantStageXp(userId: string, challengeSlug: string) {
+  const stage = getStageRewardByChallenge(challengeSlug);
+  if (!stage) return undefined;
+  try {
+    const totalXp = await prisma.$transaction(async (tx) => {
+      await tx.stageXpGrant.create({ data: { userId, stageId: stage.stageId, amount: stage.xp } });
+      const user = await tx.user.update({ where: { id: userId }, data: { xp: { increment: stage.xp } }, select: { xp: true } });
+      return user.xp;
+    });
+    return { stageId: stage.stageId, awarded: true, amount: stage.xp, totalXp };
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { xp: true } });
+    return { stageId: stage.stageId, awarded: false, amount: 0, totalXp: user?.xp ?? 0 };
+  }
 }
 
 export async function runChallenge(slug: string, sourceCode: string): Promise<SubmissionResult> {
