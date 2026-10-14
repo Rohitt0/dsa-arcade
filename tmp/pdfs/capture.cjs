@@ -1,0 +1,2 @@
+const {chromium}=require('C:/Users/Rohit/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{const b=await chromium.launch({headless:true,channel:'msedge'});const p=await b.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});for(const [name,path] of [['home','/'],['login','/login'],['register','/register']]){await p.goto('https://dsa-arcade-gilt.vercel.app'+path,{waitUntil:'networkidle',timeout:60000});await p.screenshot({path:`tmp/pdfs/${name}.png`});console.log(name,await p.title());}await b.close();})();
