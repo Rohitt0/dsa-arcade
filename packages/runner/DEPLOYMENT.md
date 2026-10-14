@@ -26,3 +26,8 @@ rtk docker run --rm --network none --read-only --tmpfs /tmp:rw,exec,size=64m --c
 This exercises the real HTTP runner and compiler with six passing cases, invalid
 C++, an incorrect answer, and an invalid token. It does not verify the live Railway
 deployment.
+
+Append `--crowded-nobody` to the smoke-test command to reproduce the old shared
+UID process-limit failure, then verify the dedicated worker still passes all cases.
+The Dockerfile and sandbox use dedicated UID/GID 21001. Compilation and execution
+retain their process, CPU, memory, time, and output limits.

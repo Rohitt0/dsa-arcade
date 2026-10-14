@@ -8,6 +8,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 USER root
+RUN groupadd --gid 21001 dsa-worker \
+    && useradd --uid 21001 --gid 21001 --no-create-home --shell /usr/sbin/nologin dsa-worker
 WORKDIR /app
 COPY server.mjs sandbox.mjs ./
 EXPOSE 4010

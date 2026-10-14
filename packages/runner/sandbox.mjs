@@ -3,8 +3,10 @@ import { chmod, chown, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const WORKER_UID = 65534;
-const WORKER_GID = 65534;
+// Keep in sync with Dockerfile. RLIMIT_NPROC counts all processes for a real UID;
+// using the shared nobody UID can exhaust the quota before GCC starts cc1plus.
+const WORKER_UID = 21001;
+const WORKER_GID = 21001;
 const MAX_CODE_LENGTH = 30_000;
 const MAX_TESTS = 20;
 const MAX_INPUT_LENGTH = 220_000;
@@ -52,6 +54,7 @@ export async function executeCpp({ sourceCode, testCases }) {
   const workDir = await mkdtemp(join(tmpdir(), 'dsa-run-'));
   try {
     await chmod(workDir, 0o770);
+    // Group 0 lets the supervisor enter/clean the directory without CAP_DAC_OVERRIDE.
     await chown(workDir, WORKER_UID, 0);
     const compilation = runLimited(
       '/usr/bin/prlimit',
@@ -92,6 +95,12 @@ export async function executeCpp({ sourceCode, testCases }) {
       };
     }
     if (compilation.error || compilation.status !== 0) {
+      if (/\b(?:vfork|fork|posix_spawn): Resource temporarily unavailable/.test(compilation.stderr ?? '')) {
+        return {
+          status: 'RUNNER_ERROR',
+          message: 'The runner could not start a compiler subprocess because its process limit was reached. Retry shortly; if this persists, check the runner deployment limits.',
+        };
+      }
       if (compilation.error || compilation.status === 126 || compilation.status === 127) {
         return {
           status: 'RUNNER_ERROR',

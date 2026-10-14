@@ -1,6 +1,6 @@
 // Run inside the runner image: requires Linux, g++, and root to drop privileges.
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { randomBytes } from 'node:crypto';
 
@@ -14,7 +14,24 @@ let logs = '';
 child.stdout.on('data', (data) => { logs += data; });
 child.stderr.on('data', (data) => { logs += data; });
 const base = 'http://127.0.0.1:14010';
+const backgroundProcesses = [];
+const backgroundExits = [];
 try {
+  if (process.argv.includes('--crowded-nobody')) {
+    // Bounded reproduction of a shared UID exhausting the old --nproc=32 quota.
+    for (let i = 0; i < 32; i++) {
+      const sleeper = spawn('/usr/bin/sleep', ['120'], { uid: 65534, gid: 65534, stdio: 'ignore' });
+      backgroundProcesses.push(sleeper);
+      backgroundExits.push(once(sleeper, 'exit'));
+      await once(sleeper, 'spawn');
+    }
+    const oldWorker = spawnSync('/usr/bin/prlimit', [
+      '--nproc=32', '--', '/usr/bin/g++', '-x', 'c++', '-o', '/tmp/old-worker-test', '-',
+    ], { uid: 65534, gid: 65534, input: 'int main() {}', encoding: 'utf8', timeout: 25000 });
+    assert.notEqual(oldWorker.status, 0, 'Old shared-UID setup should exhaust its process quota');
+    assert.match(`${oldWorker.stderr ?? ''} ${oldWorker.error?.message ?? ''}`, /Resource temporarily unavailable|EAGAIN/);
+    console.log('PASS: reproduced old shared-UID compiler process exhaustion');
+  }
   let ready = false;
   for (let attempt = 0; attempt < 50; attempt++) {
     if (child.exitCode !== null) throw new Error(logs);
@@ -76,6 +93,10 @@ int main() {
   assert.equal((await execute(source, 'invalid-token')).httpStatus, 401);
   console.log('PASS: unauthorized execution rejected');
 } finally {
+  // The restricted container has no CAP_KILL: signal workers as their own UID.
+  const sleeperPids = backgroundProcesses.filter((sleeper) => sleeper.exitCode === null && sleeper.pid).map((sleeper) => String(sleeper.pid));
+  if (sleeperPids.length) spawnSync('/bin/sh', ['-c', 'kill -TERM "$@"', 'cleanup', ...sleeperPids], { uid: 65534, gid: 65534 });
+  await Promise.all(backgroundExits);
   if (child.exitCode === null) child.kill('SIGTERM');
   await exited;
 }
